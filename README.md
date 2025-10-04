@@ -28,8 +28,8 @@ Air-Pollution-India-Analysis/
 │   └── README.md
 │
 ├── rmd/                 # RMarkdown files for EDA, modeling, and forecasting
-│   ├── data_cleaning.Rmd
-│   ├── exploratory_analysis.Rmd
+│   ├── data_cleaning.Rmd #Data cleansing for Andhra Pradesh state
+│   ├── exploratory_analysis.Rmd 
 │   ├── spatial_forecasting.Rmd
 │   ├── time_series_forecasting.Rmd
 │   └── report_summary.Rmd
