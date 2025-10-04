@@ -51,8 +51,6 @@ Air-Pollution-India-Analysis/
 - **Air Pollution Data:** [Central Pollution Control Board (CPCB), India](https://cpcb.nic.in/)  
 - **Health Data:** [Institute for Health Metrics and Evaluation (IHME)](https://www.healthdata.org/)  
 
-> ⚠️ *For confidentiality, raw datasets are not included in this repository. Only placeholders and processed summaries are provided.*
-
 ---
 
 ## 📈 Key Insights
