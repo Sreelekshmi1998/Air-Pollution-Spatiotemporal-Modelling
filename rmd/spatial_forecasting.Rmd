@@ -1,0 +1,124 @@
+---
+title: "SpatialModeling"
+author: "Sreelekshmi_Sreekumar"
+date: "2023-08-22"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+library(raster)
+library(INLA)
+library(sf)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(viridis)
+library(gridExtra)  
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+# Load data
+d_spatial_model <- read.csv("d_spatial_model.csv")
+d_spatial_model$X <- NULL
+d_spatial_model$District <- NULL
+
+# Load India shapefile
+m <- getData(name = "GADM", country = "India", level = 0) %>%
+  st_as_sf() %>%
+  st_cast("POLYGON") %>%
+  mutate(area = st_area(.)) %>%
+  arrange(desc(area)) %>%
+  slice(1) %>%
+  st_transform(crs = st_crs(4326))
+
+# Years to process
+years <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015)
+
+plots <- list()
+
+for (yr in years) {
+  
+  # Subset year
+  df <- subset(d_spatial_model, Year == yr)
+  
+  # Remove rows if needed (specific to certain years)
+  if (yr %in% c(2008, 2012)) {
+    df <- df[-4:-6, ]
+  }
+  
+  coo <- cbind(df$long, df$lat)
+  
+  # Build mesh
+  mesh <- inla.mesh.2d(loc = coo, max.edge = c(1, 5), cutoff = 0.5)
+  spde <- inla.spde2.matern(mesh = mesh, alpha = 2)
+  indexs <- inla.spde.make.index("s", spde$n.spde)
+  A <- inla.spde.make.A(mesh = mesh, loc = coo)
+  
+  # Prediction grid
+  bb <- st_bbox(m)
+  x <- seq(bb$xmin - 1, bb$xmax + 1, length.out = 50)
+  y <- seq(bb$ymin - 1, bb$ymax + 1, length.out = 50)
+  dp <- as.matrix(expand.grid(x, y))
+  p <- st_as_sf(data.frame(x = dp[,1], y = dp[,2]), coords = c("x", "y"))
+  st_crs(p) <- st_crs(4326)
+  dp <- dp[st_intersects(m, p)[[1]], ]
+  
+  Ap <- inla.spde.make.A(mesh = mesh, loc = dp)
+  
+  # INLA stacks
+  stk.e <- inla.stack(
+    tag = "est",
+    data = list(y = df$RSPM.PM10),
+    A = list(1, A),
+    effects = list(data.frame(b0 = rep(1, nrow(df))), s = indexs)
+  )
+  
+  stk.p <- inla.stack(
+    tag = "pred",
+    data = list(y = NA),
+    A = list(1, Ap),
+    effects = list(data.frame(b0 = rep(1, nrow(dp))), s = indexs)
+  )
+  
+  stk.full <- inla.stack(stk.e, stk.p)
+  formula <- y ~ b0 + f(s, model = spde)
+  
+  res <- inla(formula, family = "Gaussian",
+              data = inla.stack.data(stk.full),
+              control.predictor = list(
+                compute = TRUE,
+                A = inla.stack.A(stk.full)
+              ))
+  
+  index <- inla.stack.index(stack = stk.full, tag = "pred")$data
+  dp <- data.frame(dp)
+  names(dp) <- c("x", "y")
+  dp$pm10_mean <- res$summary.fitted.values[index, "mean"]
+  dp$pm10_ll <- res$summary.fitted.values[index, "0.025quant"]
+  dp$pm10_ul <- res$summary.fitted.values[index, "0.975quant"]
+  
+  dpm <- melt(dp, id.vars = c("x", "y"),
+              measure.vars = c("pm10_mean"))
+  
+  # Generate plot
+  plots[[as.character(yr)]] <- ggplot(m) +
+    geom_sf() +
+    coord_sf(datum = NA) +
+    geom_tile(data = dpm, aes(x = x, y = y, fill = value)) +
+    labs(x = "", y = "", title = paste("Mean for year", yr)) +
+    facet_wrap(~variable) +
+    scale_fill_viridis(name = "PM10", n = 10, limits = c(0, 350)) +
+    theme_bw()
+}
+
+# display plots in a grid
+# grid.arrange(plots[["2009"]], plots[["2010"]], plots[["2011"]], ncol = 3)
+# grid.arrange(plots[["2012"]], plots[["2013"]], plots[["2014"]], ncol = 3) 
+```
+
+

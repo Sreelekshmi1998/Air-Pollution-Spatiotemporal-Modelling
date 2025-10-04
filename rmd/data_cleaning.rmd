@@ -1,0 +1,183 @@
+---
+title: "Dissertation_Cleansing"
+author: "Sreelekshmi_Sreekumar"
+date: "2023-08-25"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+library(lubridate)
+library(data.table)
+library(tidyverse)
+library(mice)
+```
+
+# ANDHRA PRADESH CLEANSING
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+# helper: read file, parse Sampling.Date to Date, order
+read_basic <- function(path) {
+  message("Reading: ", path)
+  df <- tryCatch(data.table::fread(path, na.strings = c("", "NA")), 
+                 error = function(e) read.csv(path, stringsAsFactors = FALSE, na.strings = c("", "NA")))
+  # ensure tibble/data.frame
+  df <- as_tibble(df)
+  # normalise column name if Sampling.Date variants exist
+  date_col <- intersect(names(df), c("Sampling.Date", "Sampling.date", "sampling.date", "Sample.Date", "Date", "date"))
+  if (length(date_col) >= 1) {
+    col <- date_col[1]
+    df[[col]] <- dmy(df[[col]])
+    df[[col]] <- as.Date(df[[col]])
+    # rename to exactly Sampling.Date for compatibility with your existing code
+    names(df)[names(df) == col] <- "Sampling.Date"
+  }
+  return(df)
+}
+
+process_year <- function(path, year_val) {
+  df_raw <- read_basic(path)
+  # keep same variable naming style as original
+  tmp <- setorder(df_raw, Sampling.Date)
+  # ensure month column
+  tmp$month <- format(as.Date(tmp$Sampling.Date, format="%Y/%m/%d"), "%m")
+  # remove specific columns 
+  if ("SPM" %in% names(tmp)) tmp$SPM <- NULL
+  if ("PM.2.5" %in% names(tmp)) tmp$PM.2.5 <- NULL
+  # drop NA rows
+  tmp <- na.omit(tmp)
+  # compute monthly x location summary (df_XXXX_s)
+  summary_month_loc <- tmp %>%
+    group_by(month, City.Town.Village.Area) %>%
+    summarise(S02 = mean(SO2, na.rm = TRUE),
+              NO2 = mean(NO2, na.rm = TRUE),
+              RSPM.PM10 = mean(RSPM.PM10, na.rm = TRUE),
+              .groups = "drop") %>%
+    as.data.frame()
+  # produce spatial average per monitoring station (df_XXXX_spatial)
+  summary_spatial <- summary_month_loc %>%
+    group_by(City.Town.Village.Area) %>%
+    summarise(S02 = mean(S02, na.rm = TRUE),
+              NO2 = mean(NO2, na.rm = TRUE),
+              RSPM.PM10 = mean(RSPM.PM10, na.rm = TRUE),
+              .groups = "drop") %>%
+    as.data.frame()
+  # select monitoring station + RSPM.PM10 for mapping (df_XXXX_s_ap)
+  s_ap <- dplyr::select(summary_spatial, c(City.Town.Village.Area, RSPM.PM10))
+  s_ap$Year <- year_val
+  
+  # temporal monthly average across region (df_XXXX_t)
+  summary_month <- tmp %>%
+    group_by(month) %>%
+    summarise(S02 = mean(SO2, na.rm = TRUE),
+              NO2 = mean(NO2, na.rm = TRUE),
+              RSPM.PM10 = mean(RSPM.PM10, na.rm = TRUE),
+              .groups = "drop") %>%
+    as.data.frame()
+  # create mid-month Date (day 15) 
+  summary_month$day <- 15
+  summary_month$year <- year_val
+  tmp_dates <- data.frame(year = summary_month$year, month = summary_month$month, day = summary_month$day)
+  summary_month$Date <- as.Date(with(tmp_dates, paste(year, month, day, sep = "-")), "%Y-%m-%d")
+  # remove helper columns
+  summary_month$month <- NULL
+  summary_month$day <- NULL
+  summary_month$year <- NULL
+  # create df_year with RSPM.PM10 and Date and rename columns like original
+  df_year <- data.frame(summary_month$RSPM.PM10, summary_month$Date)
+  colnames(df_year) <- c("RSPM.PM10", "Date")
+  
+  # return a list 
+  list(
+    raw = tmp,
+    df = df_year,
+    df_s_ap = s_ap,
+    df_spatial = summary_spatial,
+    df_t = summary_month,
+    df_s = summary_month_loc
+  )
+}
+
+# ---------------------
+# Specify  files 
+files <- c(
+  "cpcb_dly_aq_andhra_pradesh-2008.csv",
+  "cpcb_dly_aq_andhra_pradesh-2009.csv",
+  "cpcb_dly_aq_andhra_pradesh-2010.csv",
+  "cpcb_dly_aq_andhra_pradesh-2012.csv",
+  "cpcb_dly_aq_andhra_pradesh-2013.csv",
+  "cpcb_dly_aq_andhra_pradesh-2014.csv",
+  "cpcb_dly_aq_andhra_pradesh-2015.csv"
+)
+years <- c(2008,2009,2010,2012,2013,2014,2015)
+
+# process each file 
+processed <- list()
+for (i in seq_along(files)) {
+  res <- process_year(files[i], years[i])
+  processed[[ as.character(years[i]) ]] <- res
+  # assign objects to global environment 
+  assign(paste0("df_", years[i]), res$df, envir = .GlobalEnv)
+  assign(paste0("df_", years[i], "_s_ap"), res$df_s_ap, envir = .GlobalEnv)
+  assign(paste0("df_", years[i], "_spatial"), res$df_spatial, envir = .GlobalEnv)
+  assign(paste0("df_", years[i], "_t"), res$df_t, envir = .GlobalEnv)
+  assign(paste0("df_", years[i], "_s"), res$df_s, envir = .GlobalEnv)
+  assign(paste0("data_", years[i]), res$raw, envir = .GlobalEnv)
+}
+
+# handle the missing year 2011 exactly as before (create empty / NA rows)
+month <- 1:12
+day <- 15
+year <- 2011
+df9 <- data.frame(year, month, day)
+df_2011_t <- data.frame(Date = as.Date(paste(df9$year, df9$month, df9$day, sep = "-"), "%Y-%m-%d"))
+df_2011 <- data.frame(RSPM.PM10 = NA, Date = df_2011_t$Date)
+assign("df_2011", df_2011, envir = .GlobalEnv)
+
+# combine temporal series 
+data_ap <- rbind(df_2008, df_2009, df_2010, df_2011, df_2012, df_2013, df_2014, df_2015)
+
+# combine spatial station summaries 
+spatial_ap <- bind_rows(df_2008_s_ap, df_2009_s_ap, df_2010_s_ap,
+                        df_2012_s_ap, df_2013_s_ap, df_2014_s_ap, df_2015_s_ap)
+# 
+# write.csv(spatial_ap, "spatial_ap.csv", row.names = FALSE)
+
+
+
+```
+
+# Similarly Data Cleansing has been done on other states
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

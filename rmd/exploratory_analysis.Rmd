@@ -1,0 +1,156 @@
+---
+title: "Exploratory_Data_Analysis"
+author: "Sreelekshmi_Sreekumar"
+date: "2023-08-22"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+  df_print: paged
+---
+
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+library(lwgeom)
+library(raster)
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(viridis)
+library(tidyverse)
+library(kableExtra)
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+
+# -----------------------------
+# Load India map
+# -----------------------------
+m <- getData(name = "GADM", country = "India", level = 0)
+m <- m %>%
+  st_as_sf() %>%
+  st_cast("POLYGON") %>%
+  mutate(area = st_area(.)) %>%
+  arrange(desc(area)) %>%
+  slice(1) %>%
+  st_transform(crs = st_crs(4326))
+
+ggplot(m) + geom_sf() + theme_bw()
+
+# -----------------------------
+# Helper function to read & clean each state/year CSV
+# -----------------------------
+read_state_year <- function(file, year) {
+  df <- read.csv(file)
+  
+  # Detect columns
+  lat_col <- intersect(names(df),   c("Latitude","latitude","Lat","lat","latitide"))[1]
+  lon_col <- intersect(names(df), c("Longitude","longitude","Long","long"))[1]
+  sta_col <- intersect(names(df), c("Monitoring.Station","Monitoring.Station.","Monitoring.Station..",
+                                   "Monitoring","Station","City.Town.Village.Area"))[1]
+  pm_col <- intersect(names(df), c("RSPM.PM10","RSPM_PM10","PM10","pm10"))[1]
+  year_col <- intersect(names(df), c("Year","year"))[1]
+  
+  # Keep only needed columns
+  df <- df %>%
+    select(all_of(c(lat_col, lon_col, sta_col, pm_col, year_col))) %>%
+    rename(latitide = !!sym(lat_col),
+           longitude = !!sym(lon_col),
+           City.Town.Village.Area = !!sym(sta_col),
+           RSPM.PM10 = !!sym(pm_col))
+  
+  if (!is.null(year_col)) {
+    df <- df %>% filter(!!sym(year_col) == year)
+  }
+  
+  df$X <- NULL
+  df$Year <- NULL
+  
+  df <- df %>% relocate(latitide, longitude, City.Town.Village.Area,     RSPM.PM10)
+  return(df)
+}
+
+# -----------------------------
+# Build dataset for a year
+# -----------------------------
+build_year_dataset <- function(year, main_file, state_files) {
+  # Main yearly file
+  main_df <- read_state_year(main_file, year)
+  
+  # State files
+  state_dfs <- lapply(state_files, read_state_year,   year = year)
+  
+  # Combine all
+  df_year <- bind_rows(main_df, bind_rows(state_dfs,   .id = NULL))
+  
+  names(df_year) <- c("lat", "long", "District", "RSPM.PM10")
+  df_year$Year <- year
+  df_model <- df_year
+  
+  # Compute x/y coordinates for plotting
+  p <- st_as_sf(data.frame(long = df_year$long, lat   = df_year$lat),coords = c("long", "lat"))
+  st_crs(p) <- st_crs(4326)
+  p <- st_transform(p, st_crs(4326))
+  df_year[, c("x","y")] <- st_coordinates(p)
+  
+  return(list(df = df_year, df_model = df_model))
+}
+
+# -----------------------------
+# Automatic file lists
+# -----------------------------
+years <- 2008:2015  
+main_files <- paste0("df_", years, "_spatial.csv")
+state_files <- c("delhi_spatial.csv","spatial_mp.csv","spatial_ap.csv","spatial_gujarat.csv","spatial_assam.csv","spatial_up.csv","spatial_wb.csv","spatial_goa.csv","spatial_jhar.csv","spatial_odisha.csv","spatial_rajsthan.csv","spatial_haryana.csv","spatial_karnataka.csv","spatial_mizoram.csv","spatial_uttarakhand.csv",
+"spatial_jk.csv","spatial_tamil_nadu.csv")  
+
+# -----------------------------
+# Loop over years
+# -----------------------------
+for (i in seq_along(years)) {
+  year <- years[i]
+  main_file <- main_files[i]
+  
+  tmp <- build_year_dataset(year, main_file, state_files)
+  
+  assign(paste0("d_", year), tmp$df)
+  assign(paste0("d_", year, "_model"), tmp$df_model)
+  
+  # Plot
+  ggplot(m) + geom_sf() + coord_sf(datum = NA) +
+    geom_point(data = tmp$df, aes(x = x, y = y, color = RSPM.PM10), size = 2) +
+    labs(x = "", y = "", title = paste("Air Pollution Distribution in Year", year)) +
+    scale_color_viridis() +
+    theme_bw()
+}
+
+
+
+
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+# -----------------------------
+# Combine all years
+# -----------------------------
+d <- bind_rows(mget(paste0("d_", years)))
+d_summary_model <- d %>% rename(Location = "District")
+d_summary_model$x <- NULL
+d_summary_model$y <- NULL
+
+knitr::kable(summary(d_summary_model), "pipe")
+
+```
+
+
+
+
+
+
+
+
+
+
+

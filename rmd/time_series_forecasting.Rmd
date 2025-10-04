@@ -1,0 +1,98 @@
+---
+title: "Dissertation_TimeSeries_Modeling"
+author: "Sreelekshmi_Sreekumar"
+date: "2023-08-16"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+library(forecast)
+library(ggplot2)
+library(urca)
+library(dplyr)
+```
+
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+# Function to process a location's time series
+analyze_ts <- function(file, location_name, start_year=2008, end_year=2016, freq=12, forecast_h=11){
+  
+  # Read CSV
+  data <- read.csv(file)
+  
+  # Create time series
+  ts_data <- ts(data$RSPM.PM10, start=start_year, end=end_year, frequency=freq)
+  
+  # Plot time series
+  plot(ts_data, xlab="Year", ylab=expression(paste("PM10 level (", µg/m^3, ")")), main=paste("Time Series Plot for", location_name))
+  
+  # STL decomposition
+  ts_data %>%
+    stl(t.window=13, s.window="periodic", robust=TRUE) %>%
+    autoplot() + ggtitle(paste("STL Decomposition for", location_name))
+  
+  # ACF and PACF
+  acf(ts_data, main=paste("ACF -", location_name))
+  pacf(ts_data, main=paste("PACF -", location_name))
+  
+  # KPSS test
+  kpss_test <- ur.kpss(ts_data)
+  print(summary(kpss_test))
+  
+  # Differencing suggestions
+  print(paste("Number of regular differences:", ndiffs(ts_data)))
+  print(paste("Number of seasonal differences:", nsdiffs(ts_data)))
+  
+  # Fit ARIMA model
+  ts_model <- auto.arima(ts_data, stepwise=FALSE, approximation=FALSE)
+  print(summary(ts_model))
+  
+  # Forecast
+  forecast_values <- forecast(ts_model, h=forecast_h)
+  print(forecast_values)
+  
+  # Plot forecast
+  forecast_plot <- autoplot(forecast_values) +
+    labs(y = expression(paste("PM10 level (", µg/m^3, ")")), x = "Year") +
+    ggtitle(paste("Forecast for", location_name))
+  print(forecast_plot)
+  
+  # Return list of results
+  return(list(ts=ts_data, model=ts_model, forecast=forecast_values, kpss=kpss_test, AIC=AIC(ts_model)))
+}
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Define files and location names
+locations <- list(
+  "Kerala" = "kerala_ts.csv",
+  "Delhi" = "delhi_ts.csv",
+  "Tamil Nadu" = "tamil_nadu_ts.csv",
+  "Jammu & Kashmir" = "jammu_ts.csv"
+)
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Run analysis for all locations
+results <- lapply(names(locations), function(loc){
+  cat("\n====================\n")
+  cat("Analyzing:", loc, "\n")
+  cat("====================\n")
+  analyze_ts(locations[[loc]], loc)
+})
+names(results) <- names(locations)
+
+# Extract AIC values for comparison
+aic_values <- sapply(results, function(x) x$AIC)
+aic_values
+
+
+```
+

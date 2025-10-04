@@ -1,0 +1,127 @@
+---
+title: "Dissertation_Statistical_Modeling"
+author: "Sreelekshmi_Sreekumar"
+date: "2023-08-22"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+library(tidyverse)
+library(mgcv)
+library(stats)
+library(MASS)
+library(knitr)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
+# Read annual health data
+years <- 2008:2015
+health_files <- paste0(years, "_apm.csv")
+health_list <- lapply(health_files, read.csv)
+health <- do.call(rbind, health_list)
+
+
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Load and Combine Data
+process_location <- function(location_name, pollution_file, k_smooth = 4, seed = 123) {
+  
+  # Read pollution data
+  pollution <- read.csv(pollution_file)
+  
+  # Filter health data for location
+  loc_health <- health %>% filter(Location == location_name)
+  
+  # Combine health and pollution
+  loc_df <- data.frame(
+    Deaths = loc_health$Value,
+    RSPM.PM10 = pollution$RSPM.PM10,
+    Year = pollution$Year
+  )
+  
+  # Remove NA rows if any
+  loc_df <- na.omit(loc_df)
+  
+  # Scatter plot
+  plot(loc_df$RSPM.PM10, loc_df$Deaths, xlab = "PM10 Level", ylab = "Death Rate")
+  title(paste("PM10 vs Death Rate for", location_name))
+  
+  # Correlation
+  print(paste("Pearson correlation for", location_name, ":", 
+              cor(loc_df$Deaths, loc_df$RSPM.PM10, method = "pearson")))
+  
+  # Linear model
+  lm_model <- lm(Deaths ~ RSPM.PM10, loc_df)
+  print(summary(lm_model))
+  plot(lm_model, 2)
+  
+  # Poisson and Quasi-Poisson GLM
+  poisson_model <- glm(Deaths ~ RSPM.PM10, loc_df, family = poisson(link = "log"))
+  print(summary(poisson_model))
+  print(AIC(poisson_model))
+  
+  poisson_model_q <- glm(Deaths ~ RSPM.PM10, loc_df, family = quasipoisson(link = "log"))
+  print(summary(poisson_model_q))
+  
+  # GAM models
+  gam_model <- gam(Deaths ~ s(RSPM.PM10, k = k_smooth, bs = "cs"), loc_df, family = quasipoisson(link = "log"))
+  print(summary(gam_model))
+  gam.check(gam_model)
+  
+  # Split train/test
+  set.seed(seed)
+  train_idx <- sample(1:nrow(loc_df), 0.8 * nrow(loc_df))
+  train_data <- loc_df[train_idx, ]
+  test_data <- loc_df[-train_idx, ]
+  
+  gam_model_train <- gam(Deaths ~ s(RSPM.PM10, k = k_smooth, bs = "cs"), train_data, family = quasipoisson(link = "log"))
+  prediction <- predict(gam_model_train, newdata = test_data, type = "response")
+  
+  # Print predictions vs actual
+  print(data.frame(Predicted = prediction, Actual = test_data$Deaths))
+  
+  return(list(lm_model = lm_model,
+              poisson_model = poisson_model,
+              poisson_model_q = poisson_model_q,
+              gam_model = gam_model,
+              gam_model_train = gam_model_train,
+              test_data = test_data,
+              prediction = prediction))
+}
+
+#Apply function to locations
+
+locations <- list(
+  "Delhi" = "ts_year_delhi.csv",
+  "Kerala" = "ts_year_kerala.csv",
+  "Jammu & Kashmir and Ladakh" = "ts_year_jk.csv",
+  "Tamil Nadu" = "ts_year_tamil_nadu.csv"
+)
+
+results <- lapply(names(locations), function(loc) {
+  process_location(loc, locations[[loc]], k_smooth = ifelse(loc=="Tamil Nadu",5,4))
+})
+names(results) <- names(locations)
+
+#Plot all scatter plots together
+par(mfrow = c(2,2))
+for(loc in names(results)) {
+  loc_data <- health %>% filter(Location == loc)
+  pollution <- read.csv(locations[[loc]])
+  loc_df <- data.frame(Deaths = loc_data$Value, RSPM.PM10 = pollution$RSPM.PM10)
+  plot(loc_df$RSPM.PM10, loc_df$Deaths, xlab = "PM10 Level", ylab = "Death Rate", main = loc)
+}
+
+#Display predicted vs actual tables
+for(loc in names(results)) {
+  cat("\nPredicted vs Actual for", loc, "\n")
+  pred_df <- data.frame(Predicted = results[[loc]]$prediction, Actual = results[[loc]]$test_data$Deaths)
+  knitr::kable(pred_df, "pipe")
+}
+
+```
+
