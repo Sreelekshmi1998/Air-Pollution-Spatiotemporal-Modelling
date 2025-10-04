@@ -23,23 +23,24 @@ Air-Pollution-India-Analysis/
 ├── LICENSE
 ├── requirements.txt
 │
-├── data/ 
-│ └── README.md
+├── data/                # Placeholder for air pollution & health data 
+│   └── README.md
 │
-├── rmd/ # RMarkdown files for EDA, modeling, and forecasting
-│ ├── data_cleaning.Rmd
-│ ├── exploratory_analysis.Rmd
-│ ├── spatial_forecasting.Rmd
-│ ├── time_series_forecasting.Rmd
-│ └── report_summary.Rmd
+├── rmd/                 # RMarkdown files for EDA, modeling, and forecasting
+│   ├── data_cleaning.Rmd
+│   ├── exploratory_analysis.Rmd
+│   ├── spatial_forecasting.Rmd
+│   ├── time_series_forecasting.Rmd
+│   └── report_summary.Rmd
 │
-├── figures/ # Visualizations & maps
-│ ├── fig1_pm10_2009_map.pdf
-│ ├── fig2_state_comparison.pdf
-│ ├── fig3_spatial_forecast_2015.pdf
-│ └── fig4_time_series_kerala_2016.pdf
+├── figures/             # Visualizations & maps
+│   ├── fig1_pm10_2009_map.pdf
+│   ├── fig2_state_comparison.pdf
+│   ├── fig3_spatial_forecast_2015.pdf
+│   └── fig4_time_series_kerala_2016.pdf
 │
-└── results/#Summary
+└── results/             # summary 
+
 
 
 ---
