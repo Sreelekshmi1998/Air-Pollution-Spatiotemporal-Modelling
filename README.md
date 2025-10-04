@@ -1,64 +1,99 @@
-# Analysis of Air Pollution Across India
+# 🌫️ Analysis of Air Pollution Across India
 
-This repository showcases my project **"Analysis of Air Pollution Across India"**, where I carried out a detailed spatiotemporal and statistical study of PM10 pollution levels across Indian states.  
-The project reflects my ability to apply advanced data science methods to real-world environmental and public health challenges.
+This repository presents my project **“Analysis of Air Pollution Across India”**, where I conducted an in-depth **spatiotemporal and statistical analysis** of PM₁₀ pollution levels across Indian states.  
+This work reflects my ability to apply **data science and visualization techniques** to address real-world **environmental and public health challenges**.
 
 ---
 
 ## ✨ My Contribution
-- Designed and implemented a complete data analysis pipeline, from **data cleaning and imputation** to **statistical modeling** and **interpretation**.
-- Applied **Bayesian spatial modeling (INLA + SPDE)** to estimate pollution levels across geography.
-- Built **ARIMA/SARIMA time-series models** to forecast PM10 concentrations in selected states.
-- Used **GLM/GAM statistical modeling** to study associations between air pollution and mortality rates.
-- Produced clear visualizations to communicate complex results effectively.
+
+- Designed and implemented a complete **data analysis pipeline** - from **data cleaning and transformation** to **statistical modeling and visualization**.  
+- Conducted **exploratory data analysis (EDA)** to identify spatial and temporal pollution patterns.  
+- Built **ARIMA/SARIMA** models to forecast PM₁₀ concentrations in selected states.  
+- Applied **Bayesian spatial analysis** (INLA + SPDE) for estimating pollution across geography.  
+- Investigated relationships between **air pollution and mortality rates** using **GLM/GAM** models.  
+- Created **visual dashboards and reports** for effective communication of insights.  
 
 ---
 
 ## 📂 Repository Structure
-```
+
 Air-Pollution-India-Analysis/
-├─ README.md
-├─ LICENSE
-├─ requirements.txt
-├─ data/                # Placeholder datasets (pollution & health data)
-├─ notebooks/           # Jupyter notebooks for spatial, temporal, and statistical modeling
-├─ scripts/             # Python scripts for preprocessing, EDA, and modeling
-├─ results/             # Model outputs and visualizations
-```
+├── README.md
+├── LICENSE
+├── requirements.txt
+│
+├── data/ 
+│ └── README.md
+│
+├── rmd/ # RMarkdown files for EDA, modeling, and forecasting
+│ ├── data_cleaning.Rmd
+│ ├── exploratory_analysis.Rmd
+│ ├── spatial_forecasting.Rmd
+│ ├── time_series_forecasting.Rmd
+│ └── report_summary.Rmd
+│
+├── figures/ # Visualizations & maps
+│ ├── fig1_pm10_2009_map.pdf
+│ ├── fig2_state_comparison.pdf
+│ ├── fig3_spatial_forecast_2015.pdf
+│ └── fig4_time_series_kerala_2016.pdf
+│
+└── results/#Summary
+
 
 ---
 
 ## 📊 Data Sources
-- **Air Pollution Data**: Central Pollution Control Board (CPCB), India  
-- **Health Data**: Institute for Health Metrics and Evaluation (IHME)  
 
-*For confidentiality, the raw datasets are not included here — only placeholders are provided.*
+- **Air Pollution Data:** [Central Pollution Control Board (CPCB), India](https://cpcb.nic.in/)  
+- **Health Data:** [Institute for Health Metrics and Evaluation (IHME)](https://www.healthdata.org/)  
+
+> ⚠️ *For confidentiality, raw datasets are not included in this repository. Only placeholders and processed summaries are provided.*
 
 ---
 
-## 🔎 Key Insights
-- Northern India consistently showed **higher PM10 pollution**, while southern states like Kerala had much lower levels.
-- Seasonal patterns revealed that **pollution peaks during winter months** due to limited pollutant dispersal.
-- Time-series models highlighted both **decreasing trends** (e.g., Tamil Nadu) and **increasing trends** (e.g., Jammu & Kashmir).
-- Statistical modeling showed **significant relationships between PM10 and mortality** in some states, emphasizing the health risks.
+## 📈 Key Insights
+
+- **Northern India** exhibited consistently higher PM₁₀ concentrations compared to southern regions.  
+- **Kerala and Tamil Nadu** maintained relatively lower pollution levels throughout the years.  
+- **Winter months** recorded the highest pollution due to limited atmospheric dispersion.  
+- Time-series forecasts indicated a **declining trend** in some states, suggesting gradual improvement.  
+- Statistical analysis revealed **notable correlations between PM₁₀ and mortality rates**, emphasizing the public health burden of air pollution.
 
 ---
 
 ## 🔮 Future Scope
-If extended, I would:
-- Analyze **PM2.5 and other pollutants** for a more detailed health impact assessment.
-- Integrate **meteorological and socio-economic variables** to enrich the models.
-- Compare statistical approaches with **machine learning methods** (e.g., Random Forest, XGBoost).
-- Explore **policy impact evaluation** to measure the effectiveness of pollution control measures.
+
+If extended, the study could:
+- Include additional pollutants such as **PM₂.₅, NO₂, and SO₂** for a holistic view.  
+- Integrate **meteorological, demographic, and socioeconomic factors** for richer models.  
+- Compare traditional statistical models with **machine learning algorithms** (e.g., Random Forest, XGBoost).  
+- Conduct **policy impact analyses** to evaluate the effectiveness of pollution control measures.  
 
 ---
 
-## 🌍 Why This Matters
-Air pollution remains a critical issue in India, with direct implications for **public health and economic well-being**.  
-This project demonstrates how **data-driven analysis** can generate insights to support **policy-making**, **urban planning**, and **sustainable development**.  
+## 🌍 Why This Project Matters
 
-It highlights my skills in:
-- Advanced statistical modeling  
-- Handling real-world, imperfect datasets  
-- Translating data into meaningful insights  
-- Communicating results clearly to both technical and non-technical audiences
+Air pollution poses a **significant health and environmental challenge** in India.  
+This project demonstrates how **data-driven insights** can guide decision-making in:
+- **Public health policy**  
+- **Urban planning**  
+- **Sustainable development**  
+
+It highlights my strengths in:
+- Data preprocessing and statistical modeling  
+- Exploratory and predictive analytics using R and Python  
+- Translating complex data into clear, visual narratives  
+- Communicating findings effectively to diverse audiences  
+
+---
+
+## 👩‍💻 Author
+
+**Sreelekshmi Sreekumar**  
+📍 Based in the United Kingdom  
+🔗 [LinkedIn](https://www.linkedin.com/in/sreelekshmi-sreekumar-8a171a21b/)  
+
+---
+
