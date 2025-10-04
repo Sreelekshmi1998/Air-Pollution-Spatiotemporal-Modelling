@@ -32,7 +32,7 @@ Air-Pollution-India-Analysis/
 │   ├── exploratory_analysis.Rmd 
 │   ├── spatial_forecasting.Rmd
 │   ├── time_series_forecasting.Rmd
-│   └── report_summary.Rmd
+│   └── statistical_modelling.Rmd
 │
 ├── figures/             # Visualizations & maps
 │   ├── fig1_pm10_2009_map.pdf
