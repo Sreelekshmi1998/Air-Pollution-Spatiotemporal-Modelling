@@ -35,10 +35,10 @@ Air-Pollution-India-Analysis/
 │   └── statistical_modelling.Rmd
 │
 ├── figures/             # Visualizations & maps
-│   ├── fig1_pm10_2009_map.pdf
-│   ├── fig2_state_comparison.pdf
-│   ├── fig3_spatial_forecast_2015.pdf
-│   └── fig4_time_series_kerala_2016.pdf
+│   ├── fig1_pm10_2009_map.png
+│   ├── fig2_state_comparison.png
+│   ├── fig3_spatial_forecast_2015.png
+│   └── fig4_time_series_kerala_2016.png
 │
 └── results/             # summary 
 
